@@ -33,12 +33,13 @@ class SensorReading(Base):
     __tablename__ = "sensor_readings"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     sensor_id: Mapped[str] = mapped_column(String(64), nullable=False)
     sensor_type: Mapped[SensorType] = mapped_column(Enum(SensorType), nullable=False)
+    measurement: Mapped[str] = mapped_column(String(32), nullable=False)
     value: Mapped[float] = mapped_column(Float, nullable=False)
     unit: Mapped[str] = mapped_column(String(16), nullable=False)
     location: Mapped[str | None] = mapped_column(String(64))
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="CURRENT_TIMESTAMP")
 
 
 class ControlEvent(Base):

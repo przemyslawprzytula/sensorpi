@@ -25,9 +25,9 @@ class SensorRepository:
                 ) from exc
             entities.append(
                 models.SensorReading(
-                    timestamp=reading.timestamp,
                     sensor_id=reading.sensor_id,
                     sensor_type=sensor_type,
+                    measurement=reading.measurement,
                     value=reading.value,
                     unit=reading.unit,
                     location=reading.location,
