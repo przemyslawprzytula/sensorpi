@@ -12,6 +12,7 @@ adafruit-circuitpython-ahtx0>=1.0.0
 # Database
 SQLAlchemy>=2.0.0
 PyMySQL>=1.0.2
+cryptography>=3.0.0
 
 # Utilities
 python-dotenv>=1.0.0

@@ -44,6 +44,9 @@ class TSL2591XSensor(BaseSensor):
         if self._device is None:
             raise RuntimeError("Sensor not initialized")
         lux = float(self._device.lux or 0.0)
+        # Get raw channel data (compatible with all library versions)
+        visible = float(self._device.visible)
+        infrared = float(self._device.infrared)
         reading = SensorReading(
             sensor_id=self.sensor_id,
             measurement="light",
@@ -52,9 +55,8 @@ class TSL2591XSensor(BaseSensor):
             timestamp=datetime.now(timezone.utc),
             location=self.location,
             metadata={
-                "broadband": float(self._device.broadband),
-                "infrared": float(self._device.infrared),
-                "visible": float(self._device.visible),
+                "visible": visible,
+                "infrared": infrared,
             },
         )
         return [reading]
