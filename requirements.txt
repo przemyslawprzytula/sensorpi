@@ -1,9 +1,9 @@
 RPi.GPIO>=0.7.1
 smbus2>=0.4.2
 adafruit-circuitpython-mcp9808>=3.1.9
-adafruit-circuitpython-tsl2591>=2.1.13
-adafruit-circuitpython-si7021>=3.2.18
-adafruit-circuitpython-ahtx0>=1.0.18
+adafruit-circuitpython-tsl2591>=1.4.0
+adafruit-circuitpython-si7021>=1.0.0
+adafruit-circuitpython-ahtx0>=1.0.0
 Flask>=3.0.0
 Flask-SocketIO>=5.3.0
 SQLAlchemy>=2.0.0
