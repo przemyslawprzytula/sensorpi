@@ -1,13 +1,21 @@
-# Hardware/Sensor libraries
-RPi.GPIO>=0.7.1
-smbus2>=0.4.2
-adafruit-circuitpython-mcp9808>=3.1.9
-adafruit-circuitpython-tsl2591>=1.4.0
-adafruit-circuitpython-si7021>=1.0.0
-adafruit-circuitpython-ahtx0>=1.0.0
+# Greenhouse Sensor System Requirements
+#
+# This project has a split architecture:
+# - RPi: Sensor collector (minimal deps) -> use requirements-rpi.txt
+# - Server: Web interface (full stack) -> use requirements-server.txt
+#
+# For development on a full machine, install both:
+#   pip install -r requirements.txt
 
-# Web framework (Flask only for now - FastAPI requires pydantic-core build)
-Flask>=2.3.0
+# Include RPi requirements (minus hardware-specific libs for dev)
+# Note: RPi.GPIO and adafruit libs only work on Raspberry Pi
+smbus2>=0.4.2
+
+# Web Framework
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+pydantic>=2.6.0
+Flask>=3.0.0
 Flask-SocketIO>=5.3.0
 
 # Database
@@ -22,5 +30,5 @@ tenacity>=8.2.0
 loguru>=0.7.2
 python-dateutil>=2.9.0
 
-# Testing (dev only)
+# Testing
 pytest>=7.0.0

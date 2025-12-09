@@ -1,0 +1,20 @@
+# RPi Sensor Collector Requirements
+# Minimal dependencies for data collection and relay control
+
+# Hardware/Sensor libraries
+RPi.GPIO>=0.7.1
+smbus2>=0.4.2
+adafruit-circuitpython-mcp9808>=3.1.9
+adafruit-circuitpython-tsl2591>=1.4.0
+adafruit-circuitpython-si7021>=1.0.0
+adafruit-circuitpython-ahtx0>=1.0.0
+
+# Database
+SQLAlchemy>=2.0.0
+PyMySQL>=1.0.2
+
+# Utilities
+python-dotenv>=1.0.0
+tenacity>=8.2.0
+loguru>=0.7.2
+python-dateutil>=2.9.0
