@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Dict
+from typing import Any, Dict, List, Optional
 import logging
 
 LOGGER = logging.getLogger(__name__)
@@ -69,14 +69,26 @@ def _resolve_gpio():
 
 
 class RelayController:
+    """Controller for relay module with dependency management.
+
+    Dependencies:
+    - pwr_12v must be ON when water_valve, grow_led_1, or grow_led_2 is ON
+    - ground_exchanger_high requires ground_exchanger_low to be ON first
+    """
+
     def __init__(
-        self, pins: Dict[str, int], fail_safe_state: str = "off", active_low: bool = True
+        self,
+        pins: Dict[str, int],
+        fail_safe_state: str = "off",
+        active_low: bool = True,
+        dependencies: Optional[Dict[str, Any]] = None,
     ) -> None:
         self._gpio = _resolve_gpio()
         self._pins = pins
         self._active_low = active_low
         self._fail_safe = RelayState.ON if fail_safe_state.lower() == "on" else RelayState.OFF
         self._states: Dict[str, RelayState] = {}
+        self._dependencies = dependencies or {}
         self._setup()
 
     def _setup(self) -> None:
@@ -88,7 +100,8 @@ class RelayController:
             self._gpio.output(pin, RelayState.OFF.to_gpio(self._active_low))
             self._states[device_id] = RelayState.OFF
 
-    def set_state(self, device_id: str, state: RelayState) -> None:
+    def _set_raw(self, device_id: str, state: RelayState) -> None:
+        """Set relay state without dependency checks."""
         pin = self._pins.get(device_id)
         if pin is None:
             raise KeyError(f"Unknown relay device_id '{device_id}'")
@@ -96,15 +109,84 @@ class RelayController:
         self._gpio.output(pin, state.to_gpio(self._active_low))
         self._states[device_id] = state
 
+    def _get_dependents(self, device_id: str) -> List[str]:
+        """Get list of devices that require this device to be ON."""
+        dep_config = self._dependencies.get(device_id, {})
+        return dep_config.get("required_by", [])
+
+    def _get_requirements(self, device_id: str) -> List[str]:
+        """Get list of devices that must be ON before this device."""
+        dep_config = self._dependencies.get(device_id, {})
+        return dep_config.get("requires", [])
+
+    def _should_auto_on(self, device_id: str) -> bool:
+        """Check if device should auto-turn-on when dependents need it."""
+        dep_config = self._dependencies.get(device_id, {})
+        return dep_config.get("auto_on", False)
+
+    def _should_auto_off(self, device_id: str) -> bool:
+        """Check if device should auto-turn-off when no dependents need it."""
+        dep_config = self._dependencies.get(device_id, {})
+        return dep_config.get("auto_off", False)
+
+    def _any_dependent_on(self, device_id: str) -> bool:
+        """Check if any dependent device is currently ON."""
+        dependents = self._get_dependents(device_id)
+        return any(self._states.get(d) == RelayState.ON for d in dependents)
+
+    def set_state(self, device_id: str, state: RelayState) -> None:
+        """Set relay state with automatic dependency management."""
+        if device_id not in self._pins:
+            raise KeyError(f"Unknown relay device_id '{device_id}'")
+
+        if state == RelayState.ON:
+            # Check if this device requires others to be ON first
+            requirements = self._get_requirements(device_id)
+            for req in requirements:
+                if self._states.get(req) != RelayState.ON:
+                    LOGGER.info("Auto-enabling required relay %s for %s", req, device_id)
+                    self._set_raw(req, RelayState.ON)
+
+            # Check if this device needs a power supply relay
+            for power_relay, dep_config in self._dependencies.items():
+                if device_id in dep_config.get("required_by", []):
+                    if dep_config.get("auto_on") and self._states.get(power_relay) != RelayState.ON:
+                        LOGGER.info("Auto-enabling power relay %s for %s", power_relay, device_id)
+                        self._set_raw(power_relay, RelayState.ON)
+
+            self._set_raw(device_id, state)
+
+        else:  # state == RelayState.OFF
+            # First turn off the device
+            self._set_raw(device_id, state)
+
+            # Check if we should turn off any device that required this one
+            for other_device in self._pins:
+                if device_id in self._get_requirements(other_device):
+                    if self._states.get(other_device) == RelayState.ON:
+                        LOGGER.info("Auto-disabling %s because required %s is OFF", other_device, device_id)
+                        self._set_raw(other_device, RelayState.OFF)
+
+            # Check if any power relay should auto-turn-off
+            for power_relay, dep_config in self._dependencies.items():
+                if dep_config.get("auto_off") and not self._any_dependent_on(power_relay):
+                    if self._states.get(power_relay) == RelayState.ON:
+                        LOGGER.info("Auto-disabling power relay %s (no dependents active)", power_relay)
+                        self._set_raw(power_relay, RelayState.OFF)
+
     def get_state(self, device_id: str) -> RelayState:
         if device_id not in self._pins:
             raise KeyError(f"Unknown relay device_id '{device_id}'")
         return self._states.get(device_id, RelayState.OFF)
 
+    def get_all_states(self) -> Dict[str, RelayState]:
+        """Return current state of all relays."""
+        return dict(self._states)
+
     def fail_safe(self) -> None:
         LOGGER.warning("Activating relay fail-safe state (%s)", self._fail_safe.name)
         for device_id in self._pins:
-            self.set_state(device_id, self._fail_safe)
+            self._set_raw(device_id, self._fail_safe)
 
     def cleanup(self) -> None:
         LOGGER.info("Cleaning up relay controller")
