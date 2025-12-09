@@ -21,6 +21,15 @@ class RelayState(Enum):
     def from_bool(cls, value: bool) -> "RelayState":
         return cls.ON if value else cls.OFF
 
+    def to_gpio(self, active_low: bool = True) -> int:
+        """Convert state to GPIO value, accounting for active-low relays."""
+        if active_low:
+            # Active-LOW: GPIO LOW = relay ON, GPIO HIGH = relay OFF
+            return 0 if self == RelayState.ON else 1
+        else:
+            # Active-HIGH: GPIO HIGH = relay ON, GPIO LOW = relay OFF
+            return 1 if self == RelayState.ON else 0
+
 
 class _MockGPIO:  # pragma: no cover - development helper
     BCM = "BCM"
@@ -60,32 +69,37 @@ def _resolve_gpio():
 
 
 class RelayController:
-    def __init__(self, pins: Dict[str, int], fail_safe_state: str = "off") -> None:
+    def __init__(
+        self, pins: Dict[str, int], fail_safe_state: str = "off", active_low: bool = True
+    ) -> None:
         self._gpio = _resolve_gpio()
         self._pins = pins
+        self._active_low = active_low
         self._fail_safe = RelayState.ON if fail_safe_state.lower() == "on" else RelayState.OFF
+        self._states: Dict[str, RelayState] = {}
         self._setup()
 
     def _setup(self) -> None:
         self._gpio.setwarnings(False)
         self._gpio.setmode(self._gpio.BCM)
-        for pin in self._pins.values():
+        for device_id, pin in self._pins.items():
             self._gpio.setup(pin, self._gpio.OUT)
-            self._gpio.output(pin, RelayState.OFF.value)
+            # Initialize all relays to OFF
+            self._gpio.output(pin, RelayState.OFF.to_gpio(self._active_low))
+            self._states[device_id] = RelayState.OFF
 
     def set_state(self, device_id: str, state: RelayState) -> None:
         pin = self._pins.get(device_id)
         if pin is None:
             raise KeyError(f"Unknown relay device_id '{device_id}'")
         LOGGER.info("Setting relay %s to %s", device_id, state.name)
-        self._gpio.output(pin, state.value)
+        self._gpio.output(pin, state.to_gpio(self._active_low))
+        self._states[device_id] = state
 
     def get_state(self, device_id: str) -> RelayState:
-        pin = self._pins.get(device_id)
-        if pin is None:
+        if device_id not in self._pins:
             raise KeyError(f"Unknown relay device_id '{device_id}'")
-        value = self._gpio.input(pin)
-        return RelayState(value)
+        return self._states.get(device_id, RelayState.OFF)
 
     def fail_safe(self) -> None:
         LOGGER.warning("Activating relay fail-safe state (%s)", self._fail_safe.name)
