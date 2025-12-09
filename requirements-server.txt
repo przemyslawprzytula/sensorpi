@@ -6,21 +6,19 @@ fastapi>=0.110.0
 uvicorn[standard]>=0.29.0
 pydantic>=2.6.0
 
-# Alternative: Flask (lighter weight)
-Flask>=3.0.0
-Flask-SocketIO>=5.3.0
+# HTTP Client (for calling RPi API)
+httpx>=0.27.0
 
 # Database
 SQLAlchemy>=2.0.0
 PyMySQL>=1.0.2
+cryptography>=3.0.0
 
 # Utilities
 python-dotenv>=1.0.0
-requests>=2.28.0
 tenacity>=8.2.0
 loguru>=0.7.2
 python-dateutil>=2.9.0
-APScheduler>=3.10.0
 
 # Testing
 pytest>=7.0.0

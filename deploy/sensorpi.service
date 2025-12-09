@@ -1,0 +1,23 @@
+[Unit]
+Description=SensorPi Greenhouse Data Collector with API
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/home/szklarnia/projects/sensorpi
+ExecStart=/home/szklarnia/projects/sensorpi/venv/bin/python3 -m sensorpi.main --with-api
+Restart=always
+RestartSec=10
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sensorpi
+
+[Install]
+WantedBy=multi-user.target

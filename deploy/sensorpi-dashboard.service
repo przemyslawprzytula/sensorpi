@@ -1,0 +1,23 @@
+[Unit]
+Description=SensorPi Greenhouse Dashboard (FastAPI)
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=ppadmin
+Group=ppadmin
+WorkingDirectory=/home/ppadmin/szklarnia/sensorpi
+ExecStart=/home/ppadmin/szklarnia/sensorpi/venv/bin/uvicorn sensorpi.api.server_api:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=10
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sensorpi-dashboard
+
+[Install]
+WantedBy=multi-user.target

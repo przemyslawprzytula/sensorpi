@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SensorPi - Greenhouse Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <header>
+        <h1>Greenhouse Dashboard</h1>
+        <div id="status-indicator">
+            <span id="connection-status" class="status-dot disconnected"></span>
+            <span id="status-text">Connecting...</span>
+        </div>
+    </header>
+
+    <main>
+        <!-- System Status Panel -->
+        <section id="system-status" class="panel">
+            <h2>System Status</h2>
+            <div class="status-grid">
+                <div class="status-item">
+                    <span class="label">RPi Connection</span>
+                    <span id="rpi-status" class="value status-unknown">--</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Database</span>
+                    <span id="db-status" class="value status-unknown">--</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Last Reading</span>
+                    <span id="last-reading" class="value">--</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Total Readings</span>
+                    <span id="reading-count" class="value">--</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Current Sensor Values -->
+        <section id="sensors" class="panel">
+            <h2>Current Sensor Values</h2>
+            <div id="sensor-cards" class="sensor-grid">
+                <!-- Populated by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Sensor Charts -->
+        <section id="charts" class="panel">
+            <h2>
+                Sensor History
+                <select id="chart-timespan">
+                    <option value="1">Last Hour</option>
+                    <option value="6">Last 6 Hours</option>
+                    <option value="24" selected>Last 24 Hours</option>
+                    <option value="48">Last 48 Hours</option>
+                    <option value="168">Last Week</option>
+                </select>
+            </h2>
+            <div id="chart-container">
+                <canvas id="temperature-chart"></canvas>
+                <canvas id="light-chart"></canvas>
+            </div>
+        </section>
+
+        <!-- Relay Controls -->
+        <section id="relays" class="panel">
+            <h2>
+                Relay Controls
+                <button id="emergency-stop" class="btn btn-danger">EMERGENCY STOP</button>
+            </h2>
+            <div id="relay-grid" class="relay-grid">
+                <!-- Populated by JavaScript -->
+            </div>
+            <div id="relay-dependencies" class="dependencies-info">
+                <!-- Shows dependency information -->
+            </div>
+        </section>
+
+        <!-- Automation Rules -->
+        <section id="automation" class="panel">
+            <h2>
+                Automation Rules
+                <label class="toggle-switch">
+                    <input type="checkbox" id="automation-enabled">
+                    <span class="slider"></span>
+                </label>
+            </h2>
+            <div id="rules-list">
+                <!-- Populated by JavaScript -->
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>SensorPi Greenhouse Controller v1.0</p>
+    </footer>
+
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

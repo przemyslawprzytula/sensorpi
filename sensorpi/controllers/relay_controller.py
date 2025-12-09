@@ -82,6 +82,7 @@ class RelayController:
         fail_safe_state: str = "off",
         active_low: bool = True,
         dependencies: Optional[Dict[str, Any]] = None,
+        nc_wiring: bool = False,
     ) -> None:
         self._gpio = _resolve_gpio()
         self._pins = pins
@@ -89,6 +90,10 @@ class RelayController:
         self._fail_safe = RelayState.ON if fail_safe_state.lower() == "on" else RelayState.OFF
         self._states: Dict[str, RelayState] = {}
         self._dependencies = dependencies or {}
+        # NC wiring: devices wired to Normally Closed contacts
+        # When relay is de-energized (RPi off), NC is closed = device ON (fail-safe)
+        # To turn device OFF, we energize the relay (opens NC contact)
+        self._nc_wiring = nc_wiring
         self._setup()
 
     def _setup(self) -> None:
@@ -96,17 +101,34 @@ class RelayController:
         self._gpio.setmode(self._gpio.BCM)
         for device_id, pin in self._pins.items():
             self._gpio.setup(pin, self._gpio.OUT)
-            # Initialize all relays to OFF
+            # Initialize: de-energize all relays (GPIO HIGH for active-low module)
+            # With NC wiring, this means all devices start ON (fail-safe default)
             self._gpio.output(pin, RelayState.OFF.to_gpio(self._active_low))
-            self._states[device_id] = RelayState.OFF
+            # Logical state tracks device state, not relay coil state
+            # With NC wiring: relay de-energized = device ON
+            self._states[device_id] = RelayState.ON if self._nc_wiring else RelayState.OFF
 
     def _set_raw(self, device_id: str, state: RelayState) -> None:
-        """Set relay state without dependency checks."""
+        """Set relay state without dependency checks.
+
+        With NC wiring:
+        - Device ON  = relay de-energized (GPIO HIGH for active-low) = NC closed
+        - Device OFF = relay energized (GPIO LOW for active-low) = NC open
+        """
         pin = self._pins.get(device_id)
         if pin is None:
             raise KeyError(f"Unknown relay device_id '{device_id}'")
-        LOGGER.info("Setting relay %s to %s", device_id, state.name)
-        self._gpio.output(pin, state.to_gpio(self._active_low))
+        LOGGER.info("Setting device %s to %s", device_id, state.name)
+
+        # Determine relay coil state based on wiring
+        if self._nc_wiring:
+            # NC wiring: invert - to turn device OFF, energize relay (ON)
+            coil_state = RelayState.OFF if state == RelayState.ON else RelayState.ON
+        else:
+            # NO wiring: direct - to turn device ON, energize relay (ON)
+            coil_state = state
+
+        self._gpio.output(pin, coil_state.to_gpio(self._active_low))
         self._states[device_id] = state
 
     def _get_dependents(self, device_id: str) -> List[str]:
