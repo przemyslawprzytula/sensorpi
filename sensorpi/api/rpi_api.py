@@ -139,10 +139,10 @@ def run_api(settings: Settings, relay_controller: RelayController | None) -> Non
     api_cfg = settings.api
     host = api_cfg.get("rpi_host", "0.0.0.0")
     port = api_cfg.get("rpi_port", 5000)
-    debug = api_cfg.get("debug", False)
 
     LOGGER.info("Starting RPi API on %s:%d", host, port)
-    app.run(host=host, port=port, debug=debug, threaded=True)
+    # use_reloader=False required when running in background thread
+    app.run(host=host, port=port, debug=False, threaded=True, use_reloader=False)
 
 
 __all__ = ["app", "init_app", "run_api"]
