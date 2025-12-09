@@ -1,0 +1,19 @@
+[Unit]
+Description=SensorPi Data Collector Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/sensorpi
+ExecStart=/opt/sensorpi/.venv/bin/python -m sensorpi.main
+Environment=SENSORPI_CONFIG=/opt/sensorpi/config/settings.json
+Restart=on-failure
+RestartSec=10
+User=pi
+Group=pi
+StandardOutput=append:/var/log/sensorpi/collector.log
+StandardError=append:/var/log/sensorpi/collector.log
+
+[Install]
+WantedBy=multi-user.target

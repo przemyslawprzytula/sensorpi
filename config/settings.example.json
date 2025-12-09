@@ -1,0 +1,55 @@
+{
+  "database": {
+    "host": "db.example.com",
+    "port": 3306,
+    "database": "greenhouse",
+    "username": "greenhouse_user",
+    "password": "change_me",
+    "ssl": true
+  },
+  "sensors": {
+    "poll_interval_seconds": 60,
+    "mcp9808": [
+      { "address": 24, "location": "air_high" },
+      { "address": 25, "location": "air_mid" },
+      { "address": 26, "location": "air_low" }
+    ],
+    "tsl2591x": { "address": 41, "location": "canopy" },
+    "si7021": { "address": 64, "location": "ambient" },
+    "aht20": { "address": 56, "location": "soil" }
+  },
+  "relays": {
+    "pins": {
+      "ventilation_main": 17,
+      "ventilation_aux": 18,
+      "led_primary": 27,
+      "led_secondary": 22
+    },
+    "names": {
+      "ventilation_main": "Main Ventilation Fan",
+      "ventilation_aux": "Auxiliary Ventilation",
+      "led_primary": "Primary Grow Lights",
+      "led_secondary": "Supplemental LEDs"
+    },
+    "fail_safe_state": "off"
+  },
+  "automation": {
+    "enabled": true,
+    "rules": [
+      {
+        "name": "Baseline Temperature Control",
+        "device_id": "ventilation_main",
+        "condition_type": "threshold",
+        "conditions": [
+          { "sensor_type": "temperature", "operator": ">", "threshold": 25.0 }
+        ],
+        "is_active": true
+      }
+    ]
+  },
+  "api": {
+    "host": "0.0.0.0",
+    "port": 8000,
+    "debug": false
+  }
+}
